@@ -170,5 +170,31 @@ return'I can help with wastage & expiry, reorder levels, margins, festival stock
 function botInit(){add('b','Namaste! 🙏 I\'m the StockPilot assistant for '+B.name+'. Ask me anything about your inventory, or type “help”.')}
 function add(c,t){const d=document.createElement('div');d.className='m '+c;d.textContent=t;$('#chat').appendChild(d);$('#chat').scrollTop=1e9}
 function ask(q,e){if(e)e.preventDefault();q=q||$('#cq').value.trim();if(!q)return;add('u',q);$('#cq')&&($('#cq').value='');setTimeout(()=>add('b',reply(q)),350)}
-mode('s');if(DB.s&&DB.users[DB.s])boot();
+mode('s');if(DB.s&&DB.users[DB.s])boot();enableStockNotifications();
+  function enableStockNotifications(){
+  if("Notification" in window && Notification.permission==="default"){Notification.requestPermission();}
+}
+function notifySoldOut(name){
+  var msg=name+" is SOLD OUT. Restock now!";
+  if("Notification" in window && Notification.permission==="granted"){
+    new Notification("StockPilot Alert",{body:msg});
+  }
+  var t=document.createElement("div");
+  t.textContent="⚠️ "+msg;
+  t.style.cssText="position:fixed;top:16px;right:16px;background:#dc2626;color:#fff;padding:12px 16px;border-radius:10px;z-index:9999;font-weight:600;";
+  document.body.appendChild(t);
+  setTimeout(function(){t.remove();},5000);
+}
+var _soldOutSeen={};
+setInterval(function(){
+  try{
+    if(!DB.s||!DB.users[DB.s])return;
+    (B.prods||[]).forEach(function(p){
+      var k=(B.name||"")+"|"+p.name;
+      if(Number(p.stock)<=0){
+        if(!_soldOutSeen[k]){_soldOutSeen[k]=1;notifySoldOut(p.name);}
+      }else{delete _soldOutSeen[k];}
+    });
+  }catch(e){}
+},2000);
 </script></body></html>
